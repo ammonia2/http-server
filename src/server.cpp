@@ -10,11 +10,11 @@
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
-  std::cout << std::unitbuf;
-  std::cerr << std::unitbuf;
+  std::cout << std::unitbuf; // use unit buffering to flush stdout after every output
+  std::cerr << std::unitbuf; // use unit buffering to flush stderr after every output
   
   // You can use print statements as follows for debugging, they'll be visible when running tests.
-  std::cout << "Logs from your program will appear here!\n";
+  // std::cout << "Logs from your program will appear here!\n";
 
   // Uncomment this block to pass the first stage
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -52,7 +52,9 @@ int main(int argc, char **argv) {
   
   std::cout << "Waiting for a client to connect...\n";
   
-  accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+  int client =accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+  std::string response = "HTTP/1.1 200 OK\r\n\r\n";
+  send(client, response.c_str(), response.length(), 0);
   std::cout << "Client connected\n";
   
   close(server_fd);
