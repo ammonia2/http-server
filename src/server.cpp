@@ -53,7 +53,13 @@ int main(int argc, char **argv) {
   std::cout << "Waiting for a client to connect...\n";
   
   int client =accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
-  std::string response = "HTTP/1.1 200 OK\r\n\r\n";
+  char msg[65536] = {};
+  if (recvfrom(client, msg, sizeof(msg)-1, 0, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len) == SO_ERROR){
+    std::cerr << "listen failed\n";
+    return 1;
+  }
+  std::string response = std::string("HTTP/1.1 ") + std::string((msg[5] == ' ' ? "200 OK\r\n\r\n":"404 NOT FOUND\r\n\r\n"));
+  
   send(client, response.c_str(), response.length(), 0);
   std::cout << "Client connected"<<std::endl;
   
