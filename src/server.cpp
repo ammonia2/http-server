@@ -58,7 +58,18 @@ int main(int argc, char **argv) {
     std::cerr << "listen failed\n";
     return 1;
   }
-  std::string response = std::string("HTTP/1.1 ") + std::string((msg[5] == ' ' ? "200 OK\r\n\r\n":"404 Not Found\r\n\r\n"));
+  char* getPos = strstr(msg, "/echo/");
+  std::string message;
+  if (getPos != NULL) {
+      getPos += strlen("/echo/"); // Move past "/echo/"
+      
+      char* endOfMessage = strstr(getPos, " HTTP/1.1");
+      if (endOfMessage != NULL) {
+          message = std::string(getPos, endOfMessage - getPos);
+      }
+  }
+
+  std::string response = std::string("HTTP/1.1 200 OK\r\n") + std::string(strstr(msg, "echo") ? ("Content-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message) : "404 Not Found");
   
   send(client, response.c_str(), response.length(), 0);
   std::cout << "Client connected"<<std::endl;
