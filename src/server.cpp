@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
     std::cerr << "listen failed\n";
     return 1;
   }
-  std::string response = std::string("HTTP/1.1 ") + std::string((msg[5] == ' ' ? "200 OK\r\n\r\n":"404 NOT FOUND\r\n\r\n"));
+  std::string response = std::string("HTTP/1.1 ") + std::string((msg[5] == ' ' ? "200 OK\r\n\r\n":"404 Not Found\r\n\r\n"));
   
   send(client, response.c_str(), response.length(), 0);
   std::cout << "Client connected"<<std::endl;
