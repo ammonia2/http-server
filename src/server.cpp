@@ -12,9 +12,46 @@
 #include <sstream>
 #include <vector>
 #include <regex>
+#include <zlib.h>
 
 void handleConnection(int, sockaddr_in &, int);
 std::string directory;
+
+std::string compressString(const std::string& str, int compressionLevel = Z_BEST_COMPRESSION) {
+    z_stream zs; // Zlib stream
+    memset(&zs, 0, sizeof(zs));
+
+    if (deflateInit2(&zs, compressionLevel, Z_DEFLATED, 15 + 16, 8, Z_DEFAULT_STRATEGY) != Z_OK) {
+        throw std::runtime_error("deflateInit failed.");
+    }
+
+    zs.next_in = reinterpret_cast<Bytef*>(const_cast<char*>(str.data()));
+    zs.avail_in = str.size(); // Input size
+
+    int ret;
+    char outbuffer[32768];
+    std::string outstring;
+
+    // Compress the data
+    do {
+        zs.next_out = reinterpret_cast<Bytef*>(outbuffer);
+        zs.avail_out = sizeof(outbuffer);
+
+        ret = deflate(&zs, Z_FINISH);
+
+        if (outstring.size() < zs.total_out) {
+            outstring.append(outbuffer, zs.total_out - outstring.size());
+        }
+    } while (ret == Z_OK);
+
+    deflateEnd(&zs);
+
+    if (ret != Z_STREAM_END) { // Check for errors
+        throw std::runtime_error("Exception during zlib compression.");
+    }
+
+    return outstring;
+}
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
@@ -98,6 +135,7 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
   requestStream >> method >> path;
 
   bool supportsGzip = false;
+  std::string compressedMessage;
   std::regex gzipRegex("gzip");
   std::smatch match;
   std::string headers;
@@ -115,14 +153,17 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
       char* endOfMessage = strstr(getPos, " HTTP/1.1");
       if (endOfMessage != NULL) {
           message = std::string(getPos, endOfMessage - getPos);
+          compressedMessage = supportsGzip? compressString(message): "";
       }
   }
   else {
     if (userAgentPos != NULL) {
       userAgentPos += strlen("User-Agent: ");
       char* endOfHeader = strstr(userAgentPos, "\r\n");
-      if (endOfHeader != NULL)
+      if (endOfHeader != NULL) {
           message = std::string(userAgentPos, endOfHeader - userAgentPos);
+          // compressedMessage = supportsGzip? compressString(message): "";
+      }
     }
   }
 
@@ -179,9 +220,14 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
                 header << "Content-Encoding: gzip\r\n";
               }
               header << "\r\n";
-              std::cout<<header.str()<<std::endl;
+
               send(client, header.str().c_str(), header.str().length(), 0);
-              send(client, buffer.data(), size, 0);
+              if (!supportsGzip) {
+                send(client, buffer.data(), size, 0);
+              } else {
+                std::string compressedData = compressString(std::string(buffer.data(), size));
+                send(client, compressedData.c_str(), compressedData.length(), 0);
+              }
           }
           file.close();
       } else {
@@ -193,7 +239,7 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
     std::string response = std::string("HTTP/1.1");
 
     if (strstr(msg, "echo") || strstr(msg, "User-Agent: ")) {
-      response += " 200 OK\r\nContent-Type: text/plain\r\n" + ((supportsGzip) ? std::string("Content-Encoding: gzip\r\n\r\n") : "Content-Length: " +std::to_string(message.length()) + "\r\n\r\n" + message + "\r\n");
+      response += " 200 OK\r\nContent-Type: text/plain\r\n" + ((supportsGzip) ? "Content-Length: " +std::to_string(compressedMessage.length())+ std::string("Content-Encoding: gzip\r\n\r\n") + compressedMessage + "/r/n" : "Content-Length: " +std::to_string(message.length()) + "\r\n\r\n" + message + "\r\n");
     }
     else if (msg[5] == ' ') {
       response += " 200 OK\r\n\r\n";
