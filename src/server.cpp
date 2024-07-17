@@ -151,10 +151,13 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
       std::string filename = path.substr(7); // Remove "/files/" from the path
       std::string filepath = directory + filename;
   
-      bool supportsGzip;
+      bool supportsGzip = false;
       char* acceptEncodingPos = strstr(msg, "Accept-Encoding: ");
       if (acceptEncodingPos != NULL) {
-          supportsGzip = true;
+          std::string acceptEncodingStr(acceptEncodingPos);
+          if (acceptEncodingStr.find("gzip") != std::string::npos) {
+              supportsGzip = true;
+          }
       }
   
       std::ifstream file(filepath, std::ios::binary | std::ios::ate);
@@ -170,8 +173,9 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
                      << "Content-Length: " << size << "\r\n";
               std::cout<<header.str()<<std::endl;
               if (supportsGzip) {
-                  header << "Content-Encoding: gzip\r\n\r\n";
+                  header << "Content-Encoding: gzip\r\n";
               }
+              header<< "\r\n";
               std::cout<<header.str()<<std::endl;
               send(client, header.str().c_str(), header.str().length(), 0);
               send(client, buffer.data(), size, 0);
