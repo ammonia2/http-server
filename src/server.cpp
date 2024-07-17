@@ -59,6 +59,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   char* getPos = strstr(msg, "/echo/");
+  char* userAgentPos = strstr(msg, "User-agent: ");
   std::string message;
   if (getPos != NULL) {
       getPos += strlen("/echo/"); // Move past "/echo/"
@@ -69,17 +70,17 @@ int main(int argc, char **argv) {
       }
   }
   else {
-    getPos = strstr(msg, "User-agent: ");
-    getPos+=strlen("User-agent: ");
-    char* endOfMessage = strstr(getPos, "\r\n");
-    if (endOfMessage != NULL) {
-        message = std::string(getPos, endOfMessage - getPos);
+    if (userAgentPos != NULL) {
+      userAgentPos += strlen("User-Agent: ");
+      char* endOfHeader = strstr(userAgentPos, "\r\n");
+      if (endOfHeader != NULL)
+          message = std::string(userAgentPos, endOfHeader - userAgentPos);
     }
   }
 
   std::string response = std::string("HTTP/1.1");
 
-  if (strstr(msg, "echo") || strstr(msg, "/user-agent")) {
+  if (strstr(msg, "echo") || strstr(msg, "User-agent: ")) {
     response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message;
   }
   else if (msg[5] == ' ') {
