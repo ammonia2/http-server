@@ -173,8 +173,12 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
               std::ostringstream header;
               header << "HTTP/1.1 200 OK\r\n"<<"Content-Encoding: gzip\r\n"
                      << "Content-Type: text/plain\r\n"
-                     << "Content-Length: " << size << "\r\n\r\n";
-              // header<< "\r\n";
+                     << "Content-Length: " << size << "\r\n";
+              
+              if (supportsGzip) {
+                header << "Content-Encoding: gzip\r\n";
+              }
+              header << "\r\n";
               std::cout<<header.str()<<std::endl;
               send(client, header.str().c_str(), header.str().length(), 0);
               send(client, buffer.data(), size, 0);
@@ -189,7 +193,7 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
     std::string response = std::string("HTTP/1.1");
 
     if (strstr(msg, "echo") || strstr(msg, "User-Agent: ")) {
-      response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message;
+      response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n" + ((supportsGzip) ? "\r\nContent-Encoding: gzip\r\n" + message: "\r\n" + message);
     }
     else if (msg[5] == ' ') {
       response += " 200 OK\r\n\r\n";
