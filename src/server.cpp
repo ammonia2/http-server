@@ -15,6 +15,18 @@
 void handleConnection(int, sockaddr_in &, int);
 std::string directory;
 
+std::string getRequestHeaderValue(const std::string &request, const std::string &header) {
+    std::string headerValue;
+    std::string headerStr = header + ": ";
+    size_t headerPos = request.find(headerStr);
+    if (headerPos != std::string::npos) {
+        size_t start = headerPos + headerStr.length();
+        size_t end = request.find("\r\n", start);
+        headerValue = request.substr(start, end - start);
+    }
+    return headerValue;
+}
+
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
   std::cout << std::unitbuf; // use unit buffering to flush stdout after every output
@@ -151,6 +163,12 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
     std::string filename = path.substr(7); // Remove "/files/" from the path
     std::string filepath = directory + filename;
 
+    bool supportsGzip = false;
+    std::string acceptEncodingValue = getRequestHeaderValue(request, "Accept-Encoding");
+    if (!acceptEncodingValue.empty()) {
+        supportsGzip = acceptEncodingValue.find("gzip") != std::string::npos;
+    }
+
     std::ifstream file(filepath, std::ios::binary | std::ios::ate);
     if (file.is_open()) {
         std::streamsize size = file.tellg();
@@ -160,9 +178,11 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
         if (file.read(buffer.data(), size)) {
             std::ostringstream header;
             header << "HTTP/1.1 200 OK\r\n"
-                  << "Content-Type: application/octet-stream\r\n"
-                  << "Content-Length: " << size << "\r\n\r\n";
-
+                  << "Content-Type: text/plain\r\n";
+                  // << "Content-Length: " << size << "\r\n\r\n";
+            if (supportsGzip) {
+                header << "Content-Encoding: gzip\r\n";
+            }
             send(client, header.str().c_str(), header.str().length(), 0);
             send(client, buffer.data(), size, 0);
         }
