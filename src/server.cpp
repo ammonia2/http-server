@@ -11,34 +11,9 @@
 #include <fstream>
 #include <sstream>
 #include <vector>
-#include <algorithm>
 
 void handleConnection(int, sockaddr_in &, int);
 std::string directory;
-
-bool isEncodingSupported(const std::string& msg) {
-    std::istringstream msgStream(msg);
-    std::string line;
-    while (std::getline(msgStream, line)) {
-        // Convert line to lowercase for case-insensitive comparison
-        std::transform(line.begin(), line.end(), line.begin(), ::tolower);
-
-        // Check if the line contains the "accept-encoding" header
-        if (line.find("accept-encoding:") == 0) {
-            // Extract the value of the Accept-Encoding header
-            std::string encoding = line.substr(std::string("accept-encoding:").length());
-            // Trim leading and trailing whitespaces
-            encoding.erase(0, encoding.find_first_not_of(" \t"));
-            encoding.erase(encoding.find_last_not_of(" \t") + 1);
-
-            // Check for supported encodings
-            if (encoding.find("gzip") != std::string::npos || encoding.find("deflate") != std::string::npos) {
-                return true; // Supported encoding found
-            }
-        }
-    }
-    return false; // No supported encoding found
-}
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
@@ -176,8 +151,17 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
       std::string filename = path.substr(7); // Remove "/files/" from the path
       std::string filepath = directory + filename;
   
-      bool supportsGzip = isEncodingSupported(msg);
-      std::cout<< strstr(msg, "Accept-Encoding: gzip")<<std::endl;
+      bool supportsGzip;
+      char* acceptEncodingPos = strstr(msg, "Accept-Encoding: ");
+      if (acceptEncodingPos != NULL) {
+          // acceptEncodingPos += strlen("Accept-Encoding: ");
+          // char* endOfHeader = strstr(acceptEncodingPos, "\r\n");
+          // if (endOfHeader != NULL) {
+          //     std::string acceptEncoding(acceptEncodingPos, endOfHeader - acceptEncodingPos);
+          //     supportsGzip = acceptEncoding.find("gzip") != std::string::npos;
+          // }
+          supportsGzip = true;
+      }
   
       std::ifstream file(filepath, std::ios::binary | std::ios::ate);
       if (file.is_open()) {
@@ -188,8 +172,8 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
           if (file.read(buffer.data(), size)) {
               std::ostringstream header;
               header << "HTTP/1.1 200 OK\r\n"
-                     << "Content-Type: text/plain\r\n";
-                    //  << "Content-Length: " << size << "\r\n";
+                     << "Content-Type: text/plain\r\n"
+                     << "Content-Length: " << size << "\r\n";
               std::cout<<header.str()<<std::endl;
               if (supportsGzip) {
                   header << "Content-Encoding: gzip\r\n\r\n";
