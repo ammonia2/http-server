@@ -7,6 +7,9 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 #include <netdb.h>
+#include <thread>
+
+void handleConnection(int, sockaddr_in &, int);
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
@@ -50,13 +53,26 @@ int main(int argc, char **argv) {
   struct sockaddr_in client_addr;
   int client_addr_len = sizeof(client_addr);
   
-  std::cout << "Waiting for a client to connect...\n";
   
-  int client =accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+  while (true) {
+    std::cout << "Waiting for a client to connect...\n";
+    int client =accept(server_fd, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len);
+    if (client < 0) {
+      std::cerr << "accept failed\n";
+      continue;
+    }
+    std::thread(handleConnection, client, std::ref(client_addr), client_addr_len).detach();
+  }
+  close(server_fd);
+
+  return 0;
+}
+
+
+void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len) {
   char msg[65536] = {};
   if (recvfrom(client, msg, sizeof(msg)-1, 0, (struct sockaddr *) &client_addr, (socklen_t *) &client_addr_len) == SO_ERROR){
     std::cerr << "listen failed\n";
-    return 1;
   }
   char* getPos = strstr(msg, "/echo/");
   char* userAgentPos = strstr(msg, "User-Agent: ");
@@ -92,8 +108,4 @@ int main(int argc, char **argv) {
 
   send(client, response.c_str(), response.length(), 0);
   std::cout << "Client connected"<<std::endl;
-  
-  close(server_fd);
-
-  return 0;
 }
