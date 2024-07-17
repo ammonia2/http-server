@@ -79,7 +79,7 @@ int main(int argc, char **argv) {
 
   std::string response = std::string("HTTP/1.1");
 
-  if (strstr(msg, "echo") || strstr(msg, "User-agent")) {
+  if (strstr(msg, "echo") || strstr(msg, "/user-agent")) {
     response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message;
   }
   else if (msg[5] == ' ') {
