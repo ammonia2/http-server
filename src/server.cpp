@@ -154,7 +154,6 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
               send(client, response.str().c_str(), response.str().length(), 0);
           }
       } else {
-          // Handle missing Content-Length header
           std::ostringstream response;
           response << "HTTP/1.1 400 Bad Request\r\n\r\n";
           send(client, response.str().c_str(), response.str().length(), 0);
@@ -174,12 +173,8 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
               std::ostringstream header;
               header << "HTTP/1.1 200 OK\r\n"
                      << "Content-Type: text/plain\r\n"
-                     << "Content-Length: " << size << "\r\n";
-              std::cout<<header.str()<<std::endl;
-              // if (supportsGzip) {
-                  header << "Content-Encoding: gzip\r\n";
-              // }
-              header<< "\r\n";
+                     << "Content-Length: " << size << "\r\n"<<"Content-Encoding: gzip\r\n\r\n";
+              // header<< "\r\n";
               std::cout<<header.str()<<std::endl;
               send(client, header.str().c_str(), header.str().length(), 0);
               send(client, buffer.data(), size, 0);
