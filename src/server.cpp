@@ -8,8 +8,12 @@
 #include <arpa/inet.h>
 #include <netdb.h>
 #include <thread>
+#include <fstream>
+#include <sstream>
+#include <vector>
 
 void handleConnection(int, sockaddr_in &, int);
+std::string directory;
 
 int main(int argc, char **argv) {
   // Flush after every std::cout / std::cerr
@@ -18,6 +22,14 @@ int main(int argc, char **argv) {
   
   // You can use print statements as follows for debugging, they'll be visible when running tests.
   // std::cout << "Logs from your program will appear here!\n";
+  for (int i = 1; i < argc; i++) {
+      if (std::string(argv[i]) == "--directory" && i + 1 < argc) {
+          directory = argv[++i];
+          if (directory.back() != '/') {
+              directory += '/'; // Ensure directory path ends with '/'
+          }
+      }
+  }
 
   // Uncomment this block to pass the first stage
   int server_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -76,7 +88,14 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
   }
   char* getPos = strstr(msg, "/echo/");
   char* userAgentPos = strstr(msg, "User-Agent: ");
+
   std::string message;
+
+  std::string request(msg);
+  std::istringstream requestStream(request);
+  std::string method, path;
+  requestStream >> method >> path;
+
   if (getPos != NULL) {
       getPos += strlen("/echo/"); // Move past "/echo/"
       
@@ -94,18 +113,45 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
     }
   }
 
-  std::string response = std::string("HTTP/1.1");
+  if (method == "GET" && path.find("/files/") == 0) {
+    std::string filename = path.substr(7); // Remove "/files/" from the path
+    std::string filepath = directory + filename;
 
-  if (strstr(msg, "echo") || strstr(msg, "User-Agent: ")) {
-    response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message;
-  }
-  else if (msg[5] == ' ') {
-    response += " 200 OK\r\n\r\n";
+    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+    if (file.is_open()) {
+        std::streamsize size = file.tellg();
+        file.seekg(0, std::ios::beg);
+
+        std::vector<char> buffer(size);
+        if (file.read(buffer.data(), size)) {
+            std::ostringstream header;
+            header << "HTTP/1.1 200 OK\r\n"
+                  << "Content-Type: application/octet-stream\r\n"
+                  << "Content-Length: " << size << "\r\n\r\n";
+
+            send(client, header.str().c_str(), header.str().length(), 0);
+            send(client, buffer.data(), size, 0);
+        }
+        file.close();
+    } else {
+        std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
+        send(client, response.c_str(), response.length(), 0);
+    }
   }
   else {
-    response += " 404 Not Found\r\n\r\n";
-  }
+    std::string response = std::string("HTTP/1.1");
 
-  send(client, response.c_str(), response.length(), 0);
+    if (strstr(msg, "echo") || strstr(msg, "User-Agent: ")) {
+      response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message;
+    }
+    else if (msg[5] == ' ') {
+      response += " 200 OK\r\n\r\n";
+    }
+    else {
+      response += " 404 Not Found\r\n\r\n";
+    }
+
+    send(client, response.c_str(), response.length(), 0);
+  }
   std::cout << "Client connected"<<std::endl;
 }
