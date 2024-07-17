@@ -171,9 +171,9 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
           std::vector<char> buffer(size);
           if (file.read(buffer.data(), size)) {
               std::ostringstream header;
-              header << "HTTP/1.1 200 OK\r\n"
+              header << "HTTP/1.1 200 OK\r\n"<<"Content-Encoding: gzip\r\n"
                      << "Content-Type: text/plain\r\n"
-                     << "Content-Length: " << size << "\r\n"<<"Content-Encoding: gzip\r\n\r\n";
+                     << "Content-Length: " << size << "\r\n\r\n";
               // header<< "\r\n";
               std::cout<<header.str()<<std::endl;
               send(client, header.str().c_str(), header.str().length(), 0);
