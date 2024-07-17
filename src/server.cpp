@@ -59,7 +59,7 @@ int main(int argc, char **argv) {
     return 1;
   }
   char* getPos = strstr(msg, "/echo/");
-  char* userAgentPos = strstr(msg, "User-agent: ");
+  char* userAgentPos = strstr(msg, "User-Agent: ");
   std::string message;
   if (getPos != NULL) {
       getPos += strlen("/echo/"); // Move past "/echo/"
