@@ -172,9 +172,9 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
                      << "Content-Type: text/plain\r\n"
                      << "Content-Length: " << size << "\r\n";
               std::cout<<header.str()<<std::endl;
-              if (supportsGzip) {
+              // if (supportsGzip) {
                   header << "Content-Encoding: gzip\r\n";
-              }
+              // }
               header<< "\r\n";
               std::cout<<header.str()<<std::endl;
               send(client, header.str().c_str(), header.str().length(), 0);
