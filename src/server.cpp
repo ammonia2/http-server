@@ -239,7 +239,7 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
     std::string response = std::string("HTTP/1.1");
 
     if (strstr(msg, "echo") || strstr(msg, "User-Agent: ")) {
-      response += " 200 OK\r\nContent-Type: text/plain\r\n" + ((supportsGzip) ? "Content-Length: " +std::to_string(compressedMessage.length())+ std::string("Content-Encoding: gzip\r\n\r\n") + compressedMessage + "/r/n" : "Content-Length: " +std::to_string(message.length()) + "\r\n\r\n" + message + "\r\n");
+      response += " 200 OK\r\nContent-Type: text/plain\r\n" + ((supportsGzip) ? "Content-Length: " +std::to_string(compressedMessage.length())+ "\r\n"+ std::string("Content-Encoding: gzip\r\n\r\n") + compressedMessage + "/r/n" : "Content-Length: " +std::to_string(message.length()) + "\r\n\r\n" + message + "\r\n");
     }
     else if (msg[5] == ' ') {
       response += " 200 OK\r\n\r\n";
