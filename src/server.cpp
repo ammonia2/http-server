@@ -155,7 +155,7 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
       if (strstr(msg, "Accept-Encoding: gzip")) {
           supportsGzip = true;
       }
-      
+
   
       std::ifstream file(filepath, std::ios::binary | std::ios::ate);
       if (file.is_open()) {
@@ -166,11 +166,10 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
           if (file.read(buffer.data(), size)) {
               std::ostringstream header;
               header << "HTTP/1.1 200 OK\r\n"
-                     << "Content-Type: text/plain\r\n";
+                     << "Content-Type: text/plain\r\n"
+                     << "Content-Length: " << size << "\r\n";
               if (supportsGzip) {
-                  header << "Content-Encoding: gzip\r\n";
-              } else {
-                  header << "Content-Length: " << size << "\r\n\r\n";
+                  header << "Content-Encoding: gzip\r\n\r\n";
               }
               send(client, header.str().c_str(), header.str().length(), 0);
               send(client, buffer.data(), size, 0);
