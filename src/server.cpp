@@ -68,9 +68,27 @@ int main(int argc, char **argv) {
           message = std::string(getPos, endOfMessage - getPos);
       }
   }
+  else {
+    getPos = strstr(msg, "User-agent: ");
+    getPos+=strlen("User-agent: ");
+    char* endOfMessage = strstr(getPos, "\r\n");
+    if (endOfMessage != NULL) {
+        message = std::string(getPos, endOfMessage - getPos);
+    }
+  }
 
-  std::string response = std::string("HTTP/1.1") + std::string(strstr(msg, "echo") ? (" 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message) : std::string((msg[5] == ' ' ? " 200 OK\r\n\r\n": " 404 Not Found\r\n\r\n")));
-  
+  std::string response = std::string("HTTP/1.1");
+
+  if (strstr(msg, "echo") || strstr(msg, "User-agent")) {
+    response += " 200 OK\r\nContent-Type: text/plain\r\nContent-Length: " + std::to_string(message.length()) + "\r\n\r\n" + message;
+  }
+  else if (msg[5] == ' ') {
+    response += " 200 OK\r\n\r\n";
+  }
+  else {
+    response += " 404 Not Found\r\n\r\n";
+  }
+
   send(client, response.c_str(), response.length(), 0);
   std::cout << "Client connected"<<std::endl;
   
