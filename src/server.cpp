@@ -154,12 +154,6 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
       bool supportsGzip;
       char* acceptEncodingPos = strstr(msg, "Accept-Encoding: ");
       if (acceptEncodingPos != NULL) {
-          // acceptEncodingPos += strlen("Accept-Encoding: ");
-          // char* endOfHeader = strstr(acceptEncodingPos, "\r\n");
-          // if (endOfHeader != NULL) {
-          //     std::string acceptEncoding(acceptEncodingPos, endOfHeader - acceptEncodingPos);
-          //     supportsGzip = acceptEncoding.find("gzip") != std::string::npos;
-          // }
           supportsGzip = true;
       }
   
