@@ -188,8 +188,8 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
           if (file.read(buffer.data(), size)) {
               std::ostringstream header;
               header << "HTTP/1.1 200 OK\r\n"
-                     << "Content-Type: text/plain\r\n"
-                     << "Content-Length: " << size << "\r\n";
+                     << "Content-Type: text/plain\r\n";
+                    //  << "Content-Length: " << size << "\r\n";
               std::cout<<header.str()<<std::endl;
               if (supportsGzip) {
                   header << "Content-Encoding: gzip\r\n\r\n";
