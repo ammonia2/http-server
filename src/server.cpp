@@ -160,37 +160,38 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
       }
   }
   else if (method == "GET" && path.find("/files/") == 0) {
-    std::string filename = path.substr(7); // Remove "/files/" from the path
-    std::string filepath = directory + filename;
-
-    bool supportsGzip = false;
-    std::string acceptEncodingValue = getRequestHeaderValue(request, "Accept-Encoding");
-    if (!acceptEncodingValue.empty()) {
-        supportsGzip = acceptEncodingValue.find("gzip") != std::string::npos;
-    }
-
-    std::ifstream file(filepath, std::ios::binary | std::ios::ate);
-    if (file.is_open()) {
-        std::streamsize size = file.tellg();
-        file.seekg(0, std::ios::beg);
-
-        std::vector<char> buffer(size);
-        if (file.read(buffer.data(), size)) {
-            std::ostringstream header;
-            header << "HTTP/1.1 200 OK\r\n"
-                  << "Content-Type: text/plain\r\n";
-                  // << "Content-Length: " << size << "\r\n\r\n";
-            if (supportsGzip) {
-                header << "Content-Encoding: gzip\r\n";
-            }
-            send(client, header.str().c_str(), header.str().length(), 0);
-            send(client, buffer.data(), size, 0);
-        }
-        file.close();
-    } else {
-        std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
-        send(client, response.c_str(), response.length(), 0);
-    }
+      std::string filename = path.substr(7); // Remove "/files/" from the path
+      std::string filepath = directory + filename;
+  
+      bool supportsGzip = false;
+      std::string acceptEncodingValue = getRequestHeaderValue(request, "Accept-Encoding");
+      if (!acceptEncodingValue.empty()) {
+          supportsGzip = acceptEncodingValue.find("gzip") != std::string::npos;
+      }
+  
+      std::ifstream file(filepath, std::ios::binary | std::ios::ate);
+      if (file.is_open()) {
+          std::streamsize size = file.tellg();
+          file.seekg(0, std::ios::beg);
+  
+          std::vector<char> buffer(size);
+          if (file.read(buffer.data(), size)) {
+              std::ostringstream header;
+              header << "HTTP/1.1 200 OK\r\n"
+                     << "Content-Type: text/plain\r\n";
+              if (supportsGzip) {
+                  header << "Content-Encoding: gzip\r\n";
+              } else {
+                  header << "Content-Length: " << size << "\r\n\r\n";
+              }
+              send(client, header.str().c_str(), header.str().length(), 0);
+              send(client, buffer.data(), size, 0);
+          }
+          file.close();
+      } else {
+          std::string response = "HTTP/1.1 404 Not Found\r\n\r\n";
+          send(client, response.c_str(), response.length(), 0);
+      }
   }
   else {
     std::string response = std::string("HTTP/1.1");
