@@ -113,7 +113,41 @@ void handleConnection(int client, sockaddr_in & client_addr, int client_addr_len
     }
   }
 
-  if (method == "GET" && path.find("/files/") == 0) {
+  if (method == "POST" && path.find("/files/") == 0) {
+      std::string filename = path.substr(7);
+      std::string filepath = directory + filename;
+  
+      std::string contentLengthHeader = "Content-Length: ";
+      size_t contentLengthPos = request.find(contentLengthHeader);
+      if (contentLengthPos != std::string::npos) {
+          size_t start = contentLengthPos + contentLengthHeader.length();
+          size_t end = request.find("\r\n", start);
+          std::string contentLengthStr = request.substr(start, end - start);
+          int contentLength = std::stoi(contentLengthStr);
+  
+          std::string requestBody = request.substr(request.find("\r\n\r\n") + 4, contentLength);
+  
+          std::ofstream file(filepath, std::ios::binary);
+          if (file.is_open()) {
+              file.write(requestBody.c_str(), contentLength);
+              file.close();
+              
+              std::ostringstream response;
+              response << "HTTP/1.1 201 Created\r\n\r\n";
+              send(client, response.str().c_str(), response.str().length(), 0);
+          } else {
+              std::ostringstream response;
+              response << "HTTP/1.1 500 Internal Server Error\r\n\r\n";
+              send(client, response.str().c_str(), response.str().length(), 0);
+          }
+      } else {
+          // Handle missing Content-Length header
+          std::ostringstream response;
+          response << "HTTP/1.1 400 Bad Request\r\n\r\n";
+          send(client, response.str().c_str(), response.str().length(), 0);
+      }
+  }
+  else if (method == "GET" && path.find("/files/") == 0) {
     std::string filename = path.substr(7); // Remove "/files/" from the path
     std::string filepath = directory + filename;
 
