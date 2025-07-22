@@ -1,39 +1,33 @@
-[![progress-banner](https://backend.codecrafters.io/progress/http-server/b1cf07f3-a824-49be-a02d-eb9b1faf7602)](https://app.codecrafters.io/users/codecrafters-bot?r=2qF)
+**HTTP Server from Scratch in C++**
 
-This is a starting point for C++ solutions to the
-["Build Your Own HTTP server" Challenge](https://app.codecrafters.io/courses/http-server/overview).
+**Core Features:**
+- Multi-threaded client handling
+- GET/POST request parsing
+- Echo endpoint: /echo/[message]
+- File operations: /files/[filename]
+- Gzip compression support
+- User-Agent parsing
 
-[HTTP](https://en.wikipedia.org/wiki/Hypertext_Transfer_Protocol) is the
-protocol that powers the web. In this challenge, you'll build a HTTP/1.1 server
-that is capable of serving multiple clients.
+**Supported Endpoints:**
+- `/echo/[message]` - Echo service with compression support
+- `/files/[filename]` - File upload (POST) and download (GET)
+- User-Agent header parsing
+- Root path handling
 
-Along the way you'll learn about TCP servers,
-[HTTP request syntax](https://www.w3.org/Protocols/rfc2616/rfc2616-sec5.html),
-and more.
-
-**Note**: If you're viewing this repo on GitHub, head over to
-[codecrafters.io](https://codecrafters.io) to try the challenge.
-
-# Passing the first stage
-
-The entry point for your HTTP server implementation is in `src/server.cpp`.
-Study and uncomment the relevant code, and push your changes to pass the first
-stage:
-
-```sh
-git add .
-git commit -m "pass 1st stage" # any msg
-git push origin master
+**Usage:**
+```bash
+./server --directory /path/to/files
 ```
+Server runs on port 4221 with configurable file directory.
 
-Time to move on to the next stage!
+**Technical Implementation:**
+- Raw socket API (AF_INET, SOCK_STREAM)
+- Manual HTTP request/response parsing
+- Thread-per-connection model
+- Binary file handling with proper Content-Type headers
+- Gzip compression with Accept-Encoding negotiation
 
-# Stage 2 & beyond
-
-Note: This section is for stages 2 and beyond.
-
-1. Ensure you have `cmake` installed locally
-1. Run `./your_program.sh` to run your program, which is implemented in
-   `src/server.cpp`.
-1. Commit your changes and run `git push origin master` to submit your solution
-   to CodeCrafters. Test output will be streamed to your terminal.
+**Requirements:**
+- C++11 or later
+- zlib library
+- Unix-like system (uses sys/socket.h)
